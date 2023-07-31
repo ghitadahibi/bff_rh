@@ -1,0 +1,113 @@
+plugins {
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+allprojects {
+
+    group = groupId
+    version = version
+    sourceCompatibility = '11'
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+dependencies {
+    compile project(":bff-extension")
+    compile project(":bff-library")
+
+    implementation ('org.json:json:20210307')
+    implementation ('org.apache.pdfbox:pdfbox:2.0.24')
+    implementation ('org.springframework:spring-web:5.3.10')
+    implementation ('org.springframework:spring-core:5.3.10')
+    implementation('org.apache.httpcomponents:httpclient:4.5.13')
+    implementation("ma.pca:starter-web:${pcaStarterVersion}")
+    implementation("ma.pca:starter-data:${pcaStarterVersion}")
+    implementation("ma.pca:starter-log:${pcaStarterVersion}")
+    //implementation("ma.pca:starter-test:${pcaStarterVersion}")
+    //implementation("ma.pca:starter-messaging:${pcaStarterVersion}")
+    //implementation("ma.pca:starter-security:${pcaStarterVersion}")
+    implementation("ma.pca:starter-audit:${pcaStarterVersion}")
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation("org.mapstruct:mapstruct:${mapStructVersion}")
+    annotationProcessor("org.mapstruct:mapstruct-processor:${mapStructVersion}")
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
+    runtimeOnly("com.h2database:h2")
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+subprojects {
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId groupId
+                artifactId artifactId
+                version version
+                from components.java
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+            }
+        }
+
+        repositories {
+            mavenLocal()
+        }
+    }
+
+    dependencies {
+        implementation("org.springframework.boot:spring-boot")
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+        }
+    }
+}
+
+processResources {
+    from('src/main/webapp/') {
+        into 'public'
+    }
+}
+
+bootRun {
+    systemProperties = System.properties
+}
+
+bootJar {
+    manifest {
+        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+    }
+}
+
+bootBuildImage {
+    imageName "${projectId}/${project.name}:${project.version}"
+}

@@ -1,0 +1,6 @@
+dependencies {
+    compile project(":bff-library")
+    implementation ("ma.pca:starter-web:${pcaStarterVersion}")
+    implementation ("org.springframework:spring-context")
+}
+

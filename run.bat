@@ -1,0 +1,1 @@
+java -DCONFIG=dev -DPROJECT_FOLDER=./.. -Dloader.path=./extensions -jar bff-starter-0.0.1-SNAPSHOT.jar

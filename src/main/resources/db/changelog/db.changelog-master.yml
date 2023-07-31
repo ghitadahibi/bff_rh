@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - detect_relations: true
+  - changeSet:
+      id: Initial Db
+      author: Example Author
+      changes:
+        - createTable:
+            tableName: example
+            columns:
+              - column:
+                  name: id
+                  type: varchar(30)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: datetime
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: example_detail
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(256)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: active
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: example_id
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_example_detail_example
+                    references: example(id)
+        - addDefaultValue:
+            columnName: active
+            tableName: example_detail
+            defaultValueBoolean: false
+  - changeSet:
+      id: Initial Data
+      author: Example Author
+      changes:
+        - sqlFile:
+            dbms: mssql
+            path: scripts/data.sql
+            relativeToChangelogFile: true
+            stripComments: true

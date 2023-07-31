@@ -1,0 +1,3 @@
+dependencies {
+    implementation ("ma.pca:starter-web:${pcaStarterVersion}")
+}

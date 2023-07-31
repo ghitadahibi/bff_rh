@@ -1,0 +1,4 @@
+rootProject.name = 'bff-starter'
+include 'bff-extension'
+include 'bff-library'
+
