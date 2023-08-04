@@ -72,14 +72,85 @@ public class ExampleController {
         final ExampleRequest request) {
         return ExampleResponse.builder().value("Testing").build();
     }
+    @PostMapping("/uploadjoboffre")
+    public ResponseEntity<String> uploadJobOffer(@RequestParam("joboffre_nom") String joboffer_nom,
+                                                 @RequestParam("joboffre") MultipartFile joboffer) throws IOException {
+
+        // Check if the file is empty or missing
+        if (joboffer == null || joboffer.isEmpty()) {
+            throw new IllegalArgumentException("Job offer file is empty or missing");
+        }
+
+        // Set the API endpoint URL
+        String apiUrl = "http://localhost:8000/uploadjoboffre";
+
+        // Create a RestTemplate object
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Set the headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // Set the request body
+        MultiValueMap<String, Object> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("joboffre_nom", joboffer_nom);
+        requestBody.add("joboffre", new ByteArrayResource(joboffer.getBytes()) {
+            @Override
+            public String getFilename() {
+                return joboffer.getOriginalFilename();
+            }
+        });
+        System.out.println(joboffer_nom);
+        // Create the request entity
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        // Send the POST request to the FastAPI backend
+        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+        // Return the response
+        return new ResponseEntity<>(response.getBody(), HttpStatus.OK);
+    }
+
+
     @GetMapping("/jobmatching")
     @ResponseBody
-    public String getJobMatching() throws IOException {
+    public String getJobMatching(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "5") Integer size) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
-        String apiUrl = "http://localhost:8000/jobmatching"; // Replace with the URL of your FastAPI API
+        String apiUrl = "http://localhost:8000/jobmatching?page=" + page + "&size=" + size;
         String response = restTemplate.getForObject(apiUrl, String.class);
 
         System.out.println(response);
         return response;
+    }
+
+
+    @GetMapping("/joboffer")
+    @ResponseBody
+    public String getJoboffer( @RequestParam(defaultValue = "0") Integer page,
+                               @RequestParam(defaultValue = "5") Integer size) throws IOException {
+        RestTemplate restTemplate = new RestTemplate();
+        String apiUrl = "http://localhost:8000/joboffer?page="+ page + "&size=" + size; // Replace with the URL of your FastAPI API
+        String response = restTemplate.getForObject(apiUrl, String.class);
+        System.out.println(response);
+        return response;
+    }
+
+    @DeleteMapping("/joboffers")
+    @ResponseBody
+    public String deleteAllJoboffers() {
+        RestTemplate restTemplate = new RestTemplate();
+        String deleteAllJoboffersUrl = "http://localhost:8000/deleteall";
+        ResponseEntity<String> response = restTemplate.exchange(deleteAllJoboffersUrl, HttpMethod.DELETE, null, String.class);
+        return response.getBody();
+    }
+    @DeleteMapping("/joboffers/{jobOfferName}")
+    @ResponseBody
+    public String deleteJobOfferById(@PathVariable String jobOfferName) {
+        RestTemplate restTemplate = new RestTemplate();
+        String deleteJobOfferUrl = "http://localhost:8000/joboffers/" + jobOfferName;
+        ResponseEntity<String> response = restTemplate.exchange(deleteJobOfferUrl, HttpMethod.DELETE, null, String.class);
+        return response.getBody();
     }
 }

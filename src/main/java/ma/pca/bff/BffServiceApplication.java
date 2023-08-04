@@ -23,7 +23,7 @@ public class BffServiceApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("*")
-                        .allowedMethods("POST", "GET", "OPTIONS")
+                        .allowedMethods("POST", "GET", "DELETE")
                         .allowedHeaders("Content-Type")
                         .exposedHeaders("Content-Type")
                         .allowCredentials(false)

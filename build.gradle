@@ -40,7 +40,7 @@ dependencies {
     implementation("ma.pca:starter-log:${pcaStarterVersion}")
     //implementation("ma.pca:starter-test:${pcaStarterVersion}")
     //implementation("ma.pca:starter-messaging:${pcaStarterVersion}")
-    //implementation("ma.pca:starter-security:${pcaStarterVersion}")
+    implementation("ma.pca:starter-security:${pcaStarterVersion}")
     implementation("ma.pca:starter-audit:${pcaStarterVersion}")
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
