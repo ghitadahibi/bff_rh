@@ -119,10 +119,11 @@ public class ExampleController {
             @RequestParam(defaultValue = "5") Integer size) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
         String apiUrl = "http://localhost:8000/jobmatching?page=" + page + "&size=" + size;
-        String response = restTemplate.getForObject(apiUrl, String.class);
-
-        System.out.println(response);
-        return response;
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
+        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.GET, entity, String.class);
+        System.out.println(response.getBody());
+        return response.getBody();
     }
 
 
@@ -132,9 +133,11 @@ public class ExampleController {
                                @RequestParam(defaultValue = "5") Integer size) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
         String apiUrl = "http://localhost:8000/joboffer?page="+ page + "&size=" + size; // Replace with the URL of your FastAPI API
-        String response = restTemplate.getForObject(apiUrl, String.class);
-        System.out.println(response);
-        return response;
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
+        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.GET, entity, String.class);
+        System.out.println(response.getBody());
+        return response.getBody();
     }
 
     @DeleteMapping("/joboffers")
@@ -142,6 +145,8 @@ public class ExampleController {
     public String deleteAllJoboffers() {
         RestTemplate restTemplate = new RestTemplate();
         String deleteAllJoboffersUrl = "http://localhost:8000/deleteall";
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
         ResponseEntity<String> response = restTemplate.exchange(deleteAllJoboffersUrl, HttpMethod.DELETE, null, String.class);
         return response.getBody();
     }
@@ -150,6 +155,8 @@ public class ExampleController {
     public String deleteJobOfferById(@PathVariable String jobOfferName) {
         RestTemplate restTemplate = new RestTemplate();
         String deleteJobOfferUrl = "http://localhost:8000/joboffers/" + jobOfferName;
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
         ResponseEntity<String> response = restTemplate.exchange(deleteJobOfferUrl, HttpMethod.DELETE, null, String.class);
         return response.getBody();
     }
