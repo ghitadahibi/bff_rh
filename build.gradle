@@ -49,6 +49,8 @@ dependencies {
     runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
     runtimeOnly("com.h2database:h2")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation ('org.springframework.boot:spring-boot-starter-mail')
+
 }
 
 subprojects {

@@ -12,6 +12,9 @@ import ma.pca.starter.web.rest.RequestDetails;
 import ma.pca.starter.web.rest.RestClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
@@ -26,11 +29,14 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.core.io.ByteArrayResource;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 @RestController
 @RequestMapping(Resources.API + Resources.EXAMPLE)
 @Slf4j
@@ -38,7 +44,8 @@ public class ExampleController {
     @Autowired
     ExampleService exampleService;
 
-
+    @Autowired
+    private JavaMailSender javaMailSender;
 
     @Autowired
     RestClient restClient;
@@ -112,6 +119,10 @@ public class ExampleController {
     }
 
 
+
+
+
+
     @GetMapping("/jobmatching")
     @ResponseBody
     public String getJobMatching(
@@ -125,6 +136,77 @@ public class ExampleController {
         System.out.println(response.getBody());
         return response.getBody();
     }
+
+    private void sendEmailToUser(String userEmail, String subject, String body) throws MessagingException {
+        String yourGmailEmail = "kenzadahibipro@gmail.com"; // Remplacez "votre_email@gmail.com" par votre adresse e-mail Gmail réelle
+        String yourGmailPassword = "rtfvuakokyjbtbok"; // Remplacez "votre_mot_de_passe" par votre mot de passe Gmail réel
+
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setTo(userEmail); // Mettez l'adresse e-mail à laquelle vous souhaitez envoyer l'e-mail ici
+        helper.setSubject(subject);
+        helper.setText(body, true);
+
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+        mailSender.setPort(587);
+        mailSender.setUsername("kenzadahibipro@gmail.com"); // Utilisez votre adresse e-mail Gmail réelle ici
+        mailSender.setPassword("rtfvuakokyjbtbok"); // Utilisez votre mot de passe Gmail réel ici
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "true");
+
+        mailSender.send(message);
+    }
+    @PostMapping("/getselectedrows")
+    @ResponseBody
+    public String getSelectedRows(@RequestBody Map<String, Object> payload) throws IOException, MessagingException {
+        List<Map<String, Object>> selectedRows = (List<Map<String, Object>>) payload.get("selectedRows");
+
+        // Extract the email addresses and names from the selected rows
+        List<Map<String, String>> recipients = new ArrayList<>();
+        for (Map<String, Object> row : selectedRows) {
+            String email = (String) row.get("email");
+            String name = email.split("@")[0]; // Extract the name from the email address
+            Map<String, String> recipient = new HashMap<>();
+            recipient.put("email", email);
+            recipient.put("name", name);
+            recipients.add(recipient);
+        }
+
+        // Envoie des e-mails aux utilisateurs sélectionnés
+        for (Map<String, String> recipient : recipients) {
+            String email = recipient.get("email");
+            String name = recipient.get("name");
+            String htmlContent = "<div style='background-color:#f8f9fa; border-radius:25px; padding:20px;'>" +
+
+                    "<div style='background-color:white; border-radius:25px; padding:20px; margin-top:20px;'>" +
+                    "<img src='https://media.licdn.com/dms/image/C510BAQGHxGm0jEqcaw/company-logo_200_200/0/1519911753747?e=2147483647&v=beta&t=9ce2gCmeiT2SBlNJhUadgszWIhDrDfG1xZqlK0Iwghw' alt='PCA Logo' style='display:block; margin:auto;'>" +
+                    "<p>Bonjour " + name + "</p>" +
+                    "<p>Nous avons le plaisir de vous informer que vous avez été présélectionné(e) pour passer le quiz de sélection des candidats pour les offres d'emploi postuler</p>" +
+                    "<p>Vous êtes donc invité(e) à passer le test d'une durée de 200 min, vous avez deux jours pour le compléter.</p>" +
+                    "<a href='https://leetcode.com/problemset/all/'>https://leetcode.com/problemset/all/</a>" +
+                    "<p>Bien à vous.</p>" +
+                    "<p>Système d'Information de PCA.</p>" +
+                    "</div>" +
+                    "</div>";
+            sendEmailToUser(email,"bravo",htmlContent);
+        }
+
+        return "Emails sent";
+    }
+
+
+
+
+
+
+
+
+
 
 
     @GetMapping("/joboffer")
