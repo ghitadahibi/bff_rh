@@ -1,5 +1,6 @@
 package ma.pca.bff.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import ma.pca.bff.config.ExampleExceptionType;
 import ma.pca.bff.config.Resources;
@@ -11,6 +12,9 @@ import ma.pca.starter.web.exception.FunctionalRuntimeException;
 import ma.pca.starter.web.rest.RequestDetails;
 import ma.pca.starter.web.rest.RestClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -23,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -30,12 +35,21 @@ import org.springframework.http.HttpEntity;
 import org.springframework.core.io.ByteArrayResource;
 import java.io.IOException;
 import java.util.*;
-
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
+
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.math.BigInteger;
 
 @RestController
 @RequestMapping(Resources.API + Resources.EXAMPLE)
@@ -43,13 +57,21 @@ import javax.mail.internet.MimeMessage;
 public class ExampleController {
     @Autowired
     ExampleService exampleService;
-
+    @Autowired
+    private MongoTemplate mongoTemplate;
     @Autowired
     private JavaMailSender javaMailSender;
 
     @Autowired
     RestClient restClient;
-
+    @GetMapping("/test-connection")
+    public void testConnection() {
+        // Vérifiez si la connexion est réussie en récupérant un document de la collection jobmatching
+        List<Document> documents = mongoTemplate.findAll(Document.class, "jobmatching");
+        for (Document document : documents) {
+            System.out.println(document.toJson());
+        }
+    }
     @GetMapping
     public ExampleResponse getExample() {
         restClient.execute(
@@ -133,7 +155,7 @@ public class ExampleController {
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
         ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.GET, entity, String.class);
-        System.out.println(response.getBody());
+        //System.out.println(response.getBody());
         return response.getBody();
     }
 
@@ -161,6 +183,9 @@ public class ExampleController {
 
         mailSender.send(message);
     }
+
+
+
     @PostMapping("/getselectedrows")
     @ResponseBody
     public String getSelectedRows(@RequestBody Map<String, Object> payload) throws IOException, MessagingException {
@@ -181,24 +206,45 @@ public class ExampleController {
         for (Map<String, String> recipient : recipients) {
             String email = recipient.get("email");
             String name = recipient.get("name");
-            String htmlContent = "<div style='background-color:#f8f9fa; border-radius:25px; padding:20px;'>" +
 
+            // Récupérez les informations de compétence et d'expérience de l'utilisateur
+            Query query = new Query();
+            query.addCriteria(Criteria.where("email").is(email));
+            Document document = mongoTemplate.findOne(query, Document.class, "jobmatching");
+            System.out.println(document.toJson());
+            String competence = document.getString("comptence");
+            System.out.println(competence);
+            // Utilisez les informations de compétence et d'expérience pour générer un lien vers un test de LeetCode approprié
+            String testUrl = getProblem(competence);
+
+            String htmlContent = "<div style='background-color:#f8f9fa; border-radius:25px; padding:20px;'>" +
                     "<div style='background-color:white; border-radius:25px; padding:20px; margin-top:20px;'>" +
                     "<img src='https://media.licdn.com/dms/image/C510BAQGHxGm0jEqcaw/company-logo_200_200/0/1519911753747?e=2147483647&v=beta&t=9ce2gCmeiT2SBlNJhUadgszWIhDrDfG1xZqlK0Iwghw' alt='PCA Logo' style='display:block; margin:auto;'>" +
                     "<p>Bonjour " + name + "</p>" +
                     "<p>Nous avons le plaisir de vous informer que vous avez été présélectionné(e) pour passer le quiz de sélection des candidats pour les offres d'emploi postuler</p>" +
                     "<p>Vous êtes donc invité(e) à passer le test d'une durée de 200 min, vous avez deux jours pour le compléter.</p>" +
-                    "<a href='https://leetcode.com/problemset/all/'>https://leetcode.com/problemset/all/</a>" +
+                    "<a href='" + testUrl + "'>" + testUrl + "</a>" +
                     "<p>Bien à vous.</p>" +
                     "<p>Système d'Information de PCA.</p>" +
                     "</div>" +
                     "</div>";
+            System.out.println("failed");
             sendEmailToUser(email,"bravo",htmlContent);
         }
 
         return "Emails sent";
     }
 
+    @GetMapping("/codeforces")
+    public String getProblem(@RequestParam String tag) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://codeforces.com/api/problemset.problems?tags=" + tag;
+        JsonNode response = restTemplate.getForObject(url, JsonNode.class);
+        JsonNode firstProblem = response.get("result").get("problems").get(0);
+        int contestId = firstProblem.get("contestId").asInt();
+        String index = firstProblem.get("index").asText();
+        String redirectUrl = "https://codeforces.com/problemset/problem/" + contestId + "/" + index;
+        return  redirectUrl;}
 
 
 
